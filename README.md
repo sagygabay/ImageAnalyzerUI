@@ -75,7 +75,6 @@ A desktop application built with Python and Tkinter for analyzing images, perfor
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an Issue for bugs, feature requests, or suggestions.
 
-*(Optional: Add more detailed contribution guidelines, e.g., coding style, branch naming)*
 
 ## License
 
