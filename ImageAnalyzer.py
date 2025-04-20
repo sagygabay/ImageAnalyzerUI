@@ -1,3 +1,17 @@
+# -----------------------------------------------------------------------------
+# Tkinter Image Analyzer
+#
+# Author: [Sagy Gabay]
+# Date: [13/03/2025/Completed]
+#
+# Description:
+# A desktop application for analyzing images, performing measurements,
+# and applying filters. Developed using Python, Tkinter, OpenCV, and Pillow.
+#
+# Acknowledgements:
+# This project was developed under the supervision of Chen Giladi as part of
+# thesis work at [Sami-Shamoon college of Engineering (SCE),Isreal].
+# -----------------------------------------------------------------------------
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, Toplevel
 from tkinter.ttk import Scrollbar, Treeview
