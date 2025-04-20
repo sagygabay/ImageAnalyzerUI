@@ -25,7 +25,7 @@ A desktop application built with Python and Tkinter for analyzing images, perfor
 
 ## Screenshots
 
-*(Add 1-2 screenshots of your application interface here. This is highly recommended!)*
+*Overview of the Image Analyzer's user interface. The left panel provides access to core features like image loading, calibration, various measurement tools (point pairs, angles, parallel lines), Canny edge detection filters (global and ROI-based), zoom controls, undo/redo, and options to export annotated images and save measurement data.*
 
 ![alt text](image.png)
 
