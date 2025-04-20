@@ -75,6 +75,10 @@ A desktop application built with Python and Tkinter for analyzing images, perfor
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an Issue for bugs, feature requests, or suggestions.
 
+## Acknowledgements
+
+This software was developed as part of my thesis work at [Sami-Shamoon college of Engineering (SCE),Isreal].
+I extend my sincere thanks to my thesis supervisor, Chen Giladi, for their invaluable mentorship, feedback, and support.
 
 ## License
 
