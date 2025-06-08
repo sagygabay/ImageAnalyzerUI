@@ -1,0 +1,9 @@
+{
+  "default_canny_low_threshold": 50,
+  "default_canny_high_threshold": 150,
+  "zoom_box_factor": 4,
+  "zoom_box_size": 180,
+  "default_theme": "arc",
+  "max_undo_history": 50,
+  "measurement_export_version": "1.0.0-refactored"
+}

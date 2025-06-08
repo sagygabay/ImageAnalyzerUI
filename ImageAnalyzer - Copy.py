@@ -8,20 +8,13 @@ import json
 import datetime
 import cv2 
 import numpy as np 
-import traceback
-from filters import FilterHandler
-from modes import ModeHandler
-from utils import AppUtils
+import traceback 
 
 class ImageAnalyzer:
     def __init__(self, root):
         self.root = root
         self.root.title("Image Analyzer")
         self.root.geometry("1400x900") # Increased default height slightly
-
-        self.filter_handler = FilterHandler(self)
-        self.mode_handler = ModeHandler(self)
-        self.utils = AppUtils(self)
 
         self.ZOOM_BOX_SIZE = 180
         self.ZOOM_BOX_FACTOR = 4
@@ -80,8 +73,8 @@ class ImageAnalyzer:
         self.canny_low = tk.IntVar(value=100)
         self.canny_high = tk.IntVar(value=200)
         # Link slider changes to update the display
-        self.canny_low.trace_add("write", self.filter_handler.apply_filters_and_display)
-        self.canny_high.trace_add("write", self.filter_handler.apply_filters_and_display)
+        self.canny_low.trace_add("write", self.apply_filters_and_display)
+        self.canny_high.trace_add("write", self.apply_filters_and_display)
 
 
         self.measurement_table = None
@@ -249,45 +242,45 @@ class ImageAnalyzer:
         file_frame.pack(fill=tk.X, padx=3, pady=3)
         self.buttons["Load Image"] = tk.Button(file_frame, text="Load Image", command=self.load_image)
         self.buttons["Load Image"].pack(**pad_options)
-        self.buttons["Export Image"] = tk.Button(file_frame, text="Export Image", command=self.utils.export_annotated_image)
+        self.buttons["Export Image"] = tk.Button(file_frame, text="Export Image", command=self.export_annotated_image)
         self.buttons["Export Image"].pack(**pad_options)
 
         # --- Dots Mode ---
         artery_frame = tk.LabelFrame(self.button_frame, text="Dots Mode (Distance/Angle)", bd=2, relief=tk.GROOVE)
         artery_frame.pack(fill=tk.X, padx=3, pady=3)
-        self.buttons["Artery Mode"] = tk.Button(artery_frame, text="Dots Mode", command=self.mode_handler.toggle_artery_mode)
+        self.buttons["Artery Mode"] = tk.Button(artery_frame, text="Dots Mode", command=self.toggle_artery_mode)
         self.buttons["Artery Mode"].pack(**pad_options)
-        self.buttons["Reset Artery"] = tk.Button(artery_frame, text="Reset Dots", command=self.mode_handler.reset_artery_mode)
+        self.buttons["Reset Artery"] = tk.Button(artery_frame, text="Reset Dots", command=self.reset_artery_mode)
         self.buttons["Reset Artery"].pack(**pad_options)
-        self.buttons["Delete Last Pair"] = tk.Button(artery_frame, text="Delete Last Pair", command=self.mode_handler.delete_last_pair)
+        self.buttons["Delete Last Pair"] = tk.Button(artery_frame, text="Delete Last Pair", command=self.delete_last_pair)
         self.buttons["Delete Last Pair"].pack(**pad_options)
 
         # --- Calibration ---
         calib_frame = tk.LabelFrame(self.button_frame, text="Calibration", bd=2, relief=tk.GROOVE)
         calib_frame.pack(fill=tk.X, padx=3, pady=3)
-        self.buttons["Calibrate"] = tk.Button(calib_frame, text="Calibrate", command=self.mode_handler.toggle_calibration_mode)
+        self.buttons["Calibrate"] = tk.Button(calib_frame, text="Calibrate", command=self.toggle_calibration_mode)
         self.buttons["Calibrate"].pack(**pad_options)
-        self.buttons["Reset Calibration"] = tk.Button(calib_frame, text="Reset Calibration", command=self.mode_handler.reset_calibration)
+        self.buttons["Reset Calibration"] = tk.Button(calib_frame, text="Reset Calibration", command=self.reset_calibration)
         self.buttons["Reset Calibration"].pack(**pad_options)
-        self.buttons["Keep Dots Fixed"] = tk.Button(calib_frame, text="Keep Dots Fixed", command=self.mode_handler.toggle_keep_dots_fixed)
+        self.buttons["Keep Dots Fixed"] = tk.Button(calib_frame, text="Keep Dots Fixed", command=self.toggle_keep_dots_fixed)
         self.buttons["Keep Dots Fixed"].pack(**pad_options)
 
         # --- Angle Measurement ---
         angle_frame = tk.LabelFrame(self.button_frame, text="Angle Measurement", bd=2, relief=tk.GROOVE)
         angle_frame.pack(fill=tk.X, padx=3, pady=3)
-        self.buttons["Angle Mode"] = tk.Button(angle_frame, text="Angle Mode", command=self.mode_handler.toggle_angle_mode)
+        self.buttons["Angle Mode"] = tk.Button(angle_frame, text="Angle Mode", command=self.toggle_angle_mode)
         self.buttons["Angle Mode"].pack(**pad_options)
-        self.buttons["Reset Angle"] = tk.Button(angle_frame, text="Reset Angle", command=self.mode_handler.reset_angle_mode)
+        self.buttons["Reset Angle"] = tk.Button(angle_frame, text="Reset Angle", command=self.reset_angle_mode)
         self.buttons["Reset Angle"].pack(**pad_options)
 
         # --- Line Mode ---
         line_frame = tk.LabelFrame(self.button_frame, text="Line Mode (Parallel)", bd=2, relief=tk.GROOVE)
         line_frame.pack(fill=tk.X, padx=3, pady=3)
-        self.buttons["Line Mode"] = tk.Button(line_frame, text="Line Mode", command=self.mode_handler.toggle_line_mode)
+        self.buttons["Line Mode"] = tk.Button(line_frame, text="Line Mode", command=self.toggle_line_mode)
         self.buttons["Line Mode"].pack(**pad_options)
-        self.buttons["Reset Lines"] = tk.Button(line_frame, text="Reset Lines", command=self.mode_handler.reset_lines)
+        self.buttons["Reset Lines"] = tk.Button(line_frame, text="Reset Lines", command=self.reset_lines)
         self.buttons["Reset Lines"].pack(**pad_options)
-        self.buttons["Show Line Measurements"] = tk.Button(line_frame, text="Show Line Measurements", command=self.utils.show_line_measurements)
+        self.buttons["Show Line Measurements"] = tk.Button(line_frame, text="Show Line Measurements", command=self.show_line_measurements)
         self.buttons["Show Line Measurements"].pack(**pad_options)
 
         # --- Filters ---
@@ -295,12 +288,12 @@ class ImageAnalyzer:
         filter_frame.pack(fill=tk.X, padx=3, pady=3)
 
         # --- Global Canny ---
-        self.buttons["Global Canny"] = tk.Button(filter_frame, text="Global Canny Filter", command=self.filter_handler.toggle_global_canny)
+        self.buttons["Global Canny"] = tk.Button(filter_frame, text="Global Canny Filter", command=self.toggle_global_canny)
         self.buttons["Global Canny"].pack(**pad_options)
         # --- End Global Canny ---
 
         # --- Canny ROI ---
-        self.buttons["Canny Selection"] = tk.Button(filter_frame, text="Canny ROI Selection", command=self.filter_handler.toggle_canny_selection)
+        self.buttons["Canny Selection"] = tk.Button(filter_frame, text="Canny ROI Selection", command=self.toggle_canny_selection)
         self.buttons["Canny Selection"].pack(**pad_options)
 
         canny_params_frame = tk.Frame(filter_frame)
@@ -320,7 +313,7 @@ class ImageAnalyzer:
                                           variable=self.canny_high, length=140, showvalue=True)
         self.canny_high_slider.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        self.buttons["Reset Filters"] = tk.Button(filter_frame, text="Reset Filters", command=self.filter_handler.reset_filters)
+        self.buttons["Reset Filters"] = tk.Button(filter_frame, text="Reset Filters", command=self.reset_filters)
         self.buttons["Reset Filters"].pack(**pad_options)
 
 
@@ -354,7 +347,7 @@ class ImageAnalyzer:
         self.diameter_entry = tk.Entry(diameter_frame, textvariable=self.diameter_var)
         self.diameter_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        self.save_button = tk.Button(meas_frame, text="Save Measurements", command=self.utils.save_measurements_to_json)
+        self.save_button = tk.Button(meas_frame, text="Save Measurements", command=self.save_measurements_to_json)
         self.save_button.pack(**pad_options)
 
         # Trigger the scrollregion calculation after buttons are created
@@ -394,12 +387,82 @@ class ImageAnalyzer:
          """Callback when the image canvas is resized."""
          self.display_image() # Re-display to fit potentially new canvas size
 
+    def update_dot_coords_display(self):
+        """Updates the text box showing coordinates and measurements."""
+        if not hasattr(self, 'dot_coords_text') or not self.dot_coords_text.winfo_exists():
+            return # Avoid errors if widget doesn't exist yet
+
+        text = ""
+        if self.calibration_dots:
+            text += "--- Calibration ---\n"
+            for i, (x, y) in enumerate(self.calibration_dots):
+                text += f"  Dot {i+1}: ({x:.1f}, {y:.1f})\n"
+            if len(self.calibration_dots) >= 2 and self.calibration_done:
+                 dist_px = math.sqrt((self.calibration_dots[1][0] - self.calibration_dots[0][0])**2 +
+                                     (self.calibration_dots[1][1] - self.calibration_dots[0][1])**2)
+                 # Find the calibration entry to get the real distance entered
+                 calib_entry = next((m for m in self.measurements if m.get("type") == "calibration" and len(m.get("points", []))==2 and m["points"][0]==self.calibration_dots[0]), None)
+                 real_dist = calib_entry.get("real_value_mm", 0) if calib_entry else (dist_px / self.calibration_factor)
+                 text += f"  -> Dist: {dist_px:.2f}px = {real_dist:.2f}mm (Factor: {self.calibration_factor:.4f} px/mm)\n"
+            elif len(self.calibration_dots) >= 2:
+                 dist_px = math.sqrt((self.calibration_dots[1][0] - self.calibration_dots[0][0])**2 +
+                                     (self.calibration_dots[1][1] - self.calibration_dots[0][1])**2)
+                 text += f"  -> Dist: {dist_px:.2f}px (Pending Calibration)\n"
+
+
+        if self.artery_dots:
+            text += "\n--- Dots Mode Measurements ---\n"
+            pair_count = 1
+            i = 0
+            while i < len(self.artery_dots):
+                if i + 1 < len(self.artery_dots):
+                    x1, y1 = self.artery_dots[i]
+                    x2, y2 = self.artery_dots[i+1]
+                    dx = x2 - x1
+                    dy = y2 - y1
+                    dist_px = math.sqrt(dx**2 + dy**2)
+                    # Calculate angle relative to positive X-axis
+                    angle = math.degrees(math.atan2(-dy, dx)) # Use -dy because Y increases downwards
+                    if angle < 0: angle += 360 # Normalize to 0-360
+
+                    text += f"  Pair {pair_count}: ({x1:.1f},{y1:.1f}) -> ({x2:.1f},{y2:.1f})\n"
+                    if self.calibration_done:
+                        dist_mm = dist_px / self.calibration_factor
+                        text += f"    Dist: {dist_px:.2f}px = {dist_mm:.3f}mm | Angle: {angle:.1f}°\n"
+                    else:
+                        text += f"    Dist: {dist_px:.2f}px | Angle: {angle:.1f}° (Uncalibrated)\n"
+                    i += 2
+                else:
+                    # Single unpaired dot
+                    x, y = self.artery_dots[i]
+                    text += f"  Pair {pair_count} (Pending): ({x:.1f}, {y:.1f})\n"
+                    i += 1
+                pair_count += 1
+
+        if self.line_points:
+            text += "\n--- Line Mode Points ---\n"
+            for idx, (x, y) in enumerate(self.line_points):
+                 text += f"  Point {idx+1}: ({x:.1f}, {y:.1f})\n"
+            if len(self.line_points) == 4:
+                 text += "  (Ready for 'Reset Lines' or new mode)\n"
+
+        if self.angle_points:
+            text += "\n--- Angle Mode Points ---\n"
+            for idx, (x, y) in enumerate(self.angle_points):
+                 text += f"  Point {idx+1}: ({x:.1f}, {y:.1f})\n"
+
+
+        self.dot_coords_text.config(state=tk.NORMAL)
+        self.dot_coords_text.delete("1.0", tk.END)
+        self.dot_coords_text.insert(tk.END, text if text else "No points placed yet.")
+        self.dot_coords_text.config(state=tk.DISABLED)
+        self.dot_coords_text.yview_moveto(1.0) # Scroll to end
 
     def reset_image_state(self, reset_zoom=True):
         """Resets most state variables associated with the current image."""
         if reset_zoom:
             self.zoom_factor = 1.0 # Reset zoom to 100%
-        self.mode_handler._reset_all_modes()
+        self._reset_all_modes()
         self.img_filtered = None
         # Conditionally reset calibration based on the flag
         if not self.keep_calibration_dots_fixed:
@@ -432,8 +495,8 @@ class ImageAnalyzer:
 
 
         # Reset UI elements
-        self.utils.update_dot_coords_display()
-        self.utils.update_tables()
+        self.update_dot_coords_display()
+        self.update_tables()
         self.measurement.set("Status: Ready" if self.img_original else "Status: Load Image")
         self.pixel_info.set("Mode: None | Pixel: | Zoom: OFF") # Reset pixel info string format
 
@@ -572,6 +635,105 @@ class ImageAnalyzer:
         """Event handler for previous image."""
         self.change_image("previous")
 
+    def apply_filters_and_display(self, *args):
+        """Applies selected filters (Global Canny OR ROI Canny) and then calls display_image."""
+        if not self.img_original:
+            return
+
+        # Start with the original image
+        img_to_process = self.img_original.copy()
+        filter_applied = False
+        processed_image = None # Will hold the result of filtering
+
+        # --- Apply Global Canny FIRST ---
+        if self.global_canny_active:
+            try:
+                # Convert to grayscale numpy array
+                img_np_rgb = np.array(img_to_process.convert("RGB"))
+                img_np_gray = cv2.cvtColor(img_np_rgb, cv2.COLOR_RGB2GRAY)
+
+                # Apply Canny
+                edges_np = cv2.Canny(img_np_gray, self.canny_low.get(), self.canny_high.get())
+
+                # Convert grayscale edges back to RGBA PIL Image
+                processed_image = Image.fromarray(edges_np).convert("RGBA")
+                filter_applied = True
+                # Update status only if slider change isn't causing it
+                if not args: # args is empty if called directly, not by slider trace
+                    self.measurement.set(f"Status: Global Canny Filter ON (Thresh: {self.canny_low.get()}/{self.canny_high.get()}).")
+
+            except Exception as e:
+                print(f"Error applying Global Canny: {e}")
+                print(traceback.format_exc())
+                processed_image = img_to_process # Fallback to original on error
+                filter_applied = False
+                self.measurement.set("Status: Error applying Global Canny.")
+
+        # --- Apply ROI Canny ONLY if Global is OFF and ROI is defined ---
+        elif self.canny_start and self.canny_end:
+            # Make a copy to paste onto if applying ROI filter
+            processed_image = img_to_process.copy() # Start with original for ROI paste
+
+            # Convert canvas coords to original image coords
+            x1_orig = int(min(self.canny_start[0], self.canny_end[0]) / self.zoom_factor)
+            y1_orig = int(min(self.canny_start[1], self.canny_end[1]) / self.zoom_factor)
+            x2_orig = int(max(self.canny_start[0], self.canny_end[0]) / self.zoom_factor)
+            y2_orig = int(max(self.canny_start[1], self.canny_end[1]) / self.zoom_factor)
+
+            # Clamp coordinates to image bounds
+            x1_orig = max(0, x1_orig)
+            y1_orig = max(0, y1_orig)
+            x2_orig = min(img_to_process.width, x2_orig)
+            y2_orig = min(img_to_process.height, y2_orig)
+
+            if x2_orig > x1_orig and y2_orig > y1_orig: # Check for valid region
+                try:
+                    # Crop the region from the original image for processing
+                    cropped_pil = img_to_process.crop((x1_orig, y1_orig, x2_orig, y2_orig))
+
+                    # Convert cropped PIL image to NumPy array -> Grayscale
+                    cropped_np_rgb = np.array(cropped_pil.convert("RGB"))
+                    cropped_np_gray = cv2.cvtColor(cropped_np_rgb, cv2.COLOR_RGB2GRAY)
+
+                    # Apply Canny edge detection
+                    edges_np = cv2.Canny(cropped_np_gray, self.canny_low.get(), self.canny_high.get())
+
+                    # Create a mask from edges (white edges, black background)
+                    mask = Image.fromarray(edges_np).convert("L")
+
+                    # Create colored overlay (green edges)
+                    colored_edges = Image.new("RGBA", mask.size, (0, 255, 0, 255)) # Green edges
+
+                    # Paste the colored edges onto the processed_image copy using the mask
+                    if processed_image.mode != 'RGBA':
+                         processed_image = processed_image.convert('RGBA')
+                    processed_image.paste(colored_edges, (x1_orig, y1_orig), mask=mask)
+
+                    filter_applied = True
+                    # Update status only if ROI selection isn't actively happening
+                    if not self.canny_selection_mode and not args:
+                        self.measurement.set(f"Status: Canny filter applied to ROI (Thresh: {self.canny_low.get()}/{self.canny_high.get()}).")
+
+                except Exception as e:
+                    print(f"Error applying ROI Canny: {e}")
+                    print(traceback.format_exc())
+                    # Keep processed_image as the original copy
+                    filter_applied = False
+                    self.measurement.set("Status: Error applying ROI Canny.")
+            else:
+                # ROI defined but has zero area, treat as no filter applied
+                 processed_image = img_to_process
+                 filter_applied = False
+
+        # --- Update the filtered image attribute ---
+        # If a filter was applied, store the result, otherwise clear img_filtered
+        self.img_filtered = processed_image if filter_applied else None
+
+        # --- Display Result ---
+        self.display_image()
+        # Update zoom box content as well
+        if self.zoom_box_mode and self.zoom_box:
+            self.update_zoom_box_content(None)
 
 
     def display_image(self):
@@ -838,35 +1000,36 @@ class ImageAnalyzer:
             line_width_zoom = 1
 
             def scale_to_zoom(pt_orig):
-                if left <= pt_orig[0] < right and top <= pt_orig[1] < bottom:
-                    zoom_x = (pt_orig[0] - left) * self.ZOOM_BOX_FACTOR
-                    zoom_y = (pt_orig[1] - top) * self.ZOOM_BOX_FACTOR
-                    return zoom_x, zoom_y
-                return None
+                 if left <= pt_orig[0] < right and top <= pt_orig[1] < bottom:
+                     zoom_x = (pt_orig[0] - left) * self.ZOOM_BOX_FACTOR
+                     zoom_y = (pt_orig[1] - top) * self.ZOOM_BOX_FACTOR
+                     return zoom_x, zoom_y
+                 return None
 
             # Calibration dots
             for dot in self.calibration_dots:
-                sp = scale_to_zoom(dot)
-                if sp: self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="cyan", outline="black")
+                 sp = scale_to_zoom(dot)
+                 if sp: self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="cyan", outline="black")
 
             # Artery dots and lines
             for i in range(0, len(self.artery_dots)):
-                sp = scale_to_zoom(self.artery_dots[i])
-                if sp:
-                    self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="yellow", outline="black")
-                    if i % 2 == 1:
-                        sp_prev = scale_to_zoom(self.artery_dots[i-1])
-                        if sp_prev: self.zoom_box.create_line(sp_prev[0], sp_prev[1], sp[0], sp[1], fill="yellow", width=line_width_zoom)
+                 sp = scale_to_zoom(self.artery_dots[i])
+                 if sp:
+                     self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="yellow", outline="black")
+                     if i % 2 == 1:
+                         sp_prev = scale_to_zoom(self.artery_dots[i-1])
+                         if sp_prev: self.zoom_box.create_line(sp_prev[0], sp_prev[1], sp[0], sp[1], fill="yellow", width=line_width_zoom)
 
             # Line mode points and lines
             for i in range(0, len(self.line_points)):
-                sp = scale_to_zoom(self.line_points[i])
-                if sp:
-                    self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="magenta", outline="black")
-                    if i % 2 == 1:
-                        sp_prev = scale_to_zoom(self.line_points[i-1])
-                        if sp_prev: self.zoom_box.create_line(sp_prev[0], sp_prev[1], sp[0], sp[1], fill="magenta", width=line_width_zoom)
+                 sp = scale_to_zoom(self.line_points[i])
+                 if sp:
+                     self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="magenta", outline="black")
+                     if i % 2 == 1:
+                         sp_prev = scale_to_zoom(self.line_points[i-1])
+                         if sp_prev: self.zoom_box.create_line(sp_prev[0], sp_prev[1], sp[0], sp[1], fill="magenta", width=line_width_zoom)
 
+            # Angle points and lines
             # Angle points and lines
             if self.angle_points:
                 # Draw dots
@@ -879,7 +1042,7 @@ class ImageAnalyzer:
                     scaled_points_in_zoom = [scale_to_zoom(p) for p in self.angle_points]
                     visible_points = [p for p in scaled_points_in_zoom if p is not None]
                     if len(visible_points) > 1:
-                        self.zoom_box.create_line(visible_points, fill="lime green", width=line_width_zoom, dash=(3,1))
+                         self.zoom_box.create_line(visible_points, fill="lime green", width=line_width_zoom, dash=(3,1))
 
             # Draw crosshair at the center
             center = self.ZOOM_BOX_SIZE / 2
@@ -890,288 +1053,24 @@ class ImageAnalyzer:
             self.zoom_box.create_line(center-offset*0.6, center, center+offset*0.6, center, fill="red", width=lw)
 
         except tk.TclError as e:
-            # print(f"Tkinter Error during zoom box update: {e}")
-            try:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Tk Err", fill="red")
-            except tk.TclError: pass # Ignore if zoom_box itself is destroyed
-        except ValueError as e:
-            # print(f"ValueError during zoom box update: {e}")
-            try:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Size Err", fill="red")
-            except tk.TclError: pass
-        except Exception as e:
-            print(f"Error updating zoom box content: {e}")
-            print(traceback.format_exc())
-            try:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Error", fill="red")
-            except tk.TclError: pass
-
-        # --- Draw Overlays ---
-        def scale_pt(pt):
-            return (pt[0] * self.zoom_factor, pt[1] * self.zoom_factor)
-
-        dot_radius = 3
-        line_width = 2
-
-        # Draw calibration dots
-        for dot in self.calibration_dots:
-            sx, sy = scale_pt(dot)
-            self.image_canvas.create_oval(sx - dot_radius, sy - dot_radius, sx + dot_radius, sy + dot_radius, fill="cyan", outline="black")
-
-        # Draw artery lines and dots
-        for i in range(0, len(self.artery_dots)):
-            sx, sy = scale_pt(self.artery_dots[i])
-            self.image_canvas.create_oval(sx - dot_radius, sy - dot_radius, sx + dot_radius, sy + dot_radius, fill="yellow", outline="black")
-            if i % 2 == 1:
-                sx_prev, sy_prev = scale_pt(self.artery_dots[i-1])
-                self.image_canvas.create_line(sx_prev, sy_prev, sx, sy, fill="yellow", width=line_width)
-
-        # Draw line mode lines and points (PERSISTENT)
-        for i in range(0, len(self.line_points)):
-            sx, sy = scale_pt(self.line_points[i])
-            self.image_canvas.create_oval(sx - dot_radius, sy - dot_radius, sx + dot_radius, sy + dot_radius, fill="magenta", outline="black")
-            if i % 2 == 1: # Draw line for pairs
-                sx_prev, sy_prev = scale_pt(self.line_points[i-1])
-                self.image_canvas.create_line(sx_prev, sy_prev, sx, sy, fill="magenta", width=line_width)
-
-        # Draw angle points and lines
-        # Draw angle points and lines
-        if self.angle_points:
-            # Draw dots first
-            for i in range(len(self.angle_points)):
-                sp = scale_pt(self.angle_points[i])
-                self.image_canvas.create_oval(sp[0]-dot_radius, sp[1]-dot_radius, sp[0]+dot_radius, sp[1]+dot_radius, fill="lime green", outline="black")
-
-            # Draw lines connecting them
-            if len(self.angle_points) > 1:
-                scaled_points = [scale_pt(p) for p in self.angle_points]
-                self.image_canvas.create_line(scaled_points, fill="lime green", width=line_width, dash=(4, 2))
-
-
-        # Draw the tick markers for Line Mode measurements if available
-        tick_radius = 2
-        for pt1, pt2 in self.line_measurement_points:
-            sx1, sy1 = scale_pt(pt1)
-            sx2, sy2 = scale_pt(pt2)
-            self.image_canvas.create_oval(sx1 - tick_radius, sy1 - tick_radius, sx1 + tick_radius, sy1 + tick_radius, fill="red", outline="red")
-            self.image_canvas.create_line(sx1, sy1, sx2, sy2, fill="red", dash=(2, 2))
-
-        # --- Draw Selection Rectangles ---
-        # Draw completed Canny rectangle if selection is done
-        if self.canny_start and self.canny_end and not self.canny_selection_mode:
-            self.image_canvas.delete("canny_rect") # Delete potential old one during drag
-            self.image_canvas.create_rectangle(
-                self.canny_start[0], self.canny_start[1],
-                self.canny_end[0], self.canny_end[1],
-                outline="blue", dash=(4, 4), width=1, tags="canny_rect"
-            )
-        elif not self.canny_selection_mode:
-             self.image_canvas.delete("canny_rect")
-
-        # Draw completed FIND_EDGES rectangle (legacy)
-        if self.selection_start and self.selection_end and not self.edge_selection_mode:
-             self.image_canvas.delete("selection_rect")
-             self.image_canvas.create_rectangle(
-                 self.selection_start[0], self.selection_start[1],
-                 self.selection_end[0], self.selection_end[1],
-                 outline="red", dash=(4, 4), width=1, tags="selection_rect"
-             )
-        elif not self.edge_selection_mode:
-             self.image_canvas.delete("selection_rect")
-
-
-    def update_zoom_box_and_pixel(self, event=None):
-         """Updates pixel info and zoom box based on mouse position."""
-         if not self.img_original or not event or not self.image_canvas or not self.image_canvas.winfo_exists():
-             return
-
-         try:
-             canvas_x = self.image_canvas.canvasx(event.x)
-             canvas_y = self.image_canvas.canvasy(event.y)
-             orig_x = int(canvas_x / self.zoom_factor)
-             orig_y = int(canvas_y / self.zoom_factor)
-
-             # Update Pixel Info Label
-             pixel_str_part = "Pixel:" # Default
-             if 0 <= orig_x < self.img_original.width and 0 <= orig_y < self.img_original.height:
-                 try:
-                     pixel_value = self.img_original.getpixel((orig_x, orig_y))
-                     if isinstance(pixel_value, tuple): # RGBA or RGB
-                         pixel_str = f"RGB:({pixel_value[0]},{pixel_value[1]},{pixel_value[2]})"
-                         if len(pixel_value) == 4: pixel_str += f" A:{pixel_value[3]}"
-                     else: # Grayscale
-                         pixel_str = f"Gray:{pixel_value}"
-                     pixel_str_part = f"Pixel @ ({orig_x}, {orig_y}): {pixel_str}"
-                 except Exception:
-                     pixel_str_part = f"Pixel @ ({orig_x}, {orig_y}): Error"
-             else:
-                 pixel_str_part = "Pixel: Outside Image"
-
-             # Combine with current mode info safely
+             # print(f"Tkinter Error during zoom box update: {e}")
              try:
-                 current_info = self.pixel_info.get()
-                 parts = current_info.split('|')
-                 mode_info = parts[0].strip() if parts else "Mode: Unknown"
-                 zoom_info = parts[-1].strip() if parts else "Zoom: ?"
-                 self.pixel_info.set(f"{mode_info} | {pixel_str_part} | {zoom_info}")
-             except Exception: # Fallback if pixel_info string is unexpected
-                 self.pixel_info.set(f"Mode: Unknown | {pixel_str_part} | Zoom: {'ON' if self.zoom_box_mode else 'OFF'}")
-
-
-             # Update Zoom Box if active
-             if self.zoom_box_mode and self.zoom_box and self.zoom_box.winfo_exists():
-                 self.update_zoom_box_content(event)
-
-         except tk.TclError:
-             pass # Handle potential errors if canvas is destroyed during motion event
-
-
-    def update_zoom_box_content(self, event=None):
-        """Updates the content of the zoom box canvas."""
-        # --- Safeguard ---
-        if not self.root or not self.root.winfo_exists() or not self.zoom_box or not self.zoom_box.winfo_exists():
-            return # Cannot update if widgets aren't ready
-        # --- End Safeguard ---
-
-        if not self.zoom_box_mode or not self.img_original:
-            return
-
-        try:
-            # Determine center point for zoom box
-            if event:
-                canvas_x = self.image_canvas.canvasx(event.x)
-                canvas_y = self.image_canvas.canvasy(event.y)
-                orig_x = int(canvas_x / self.zoom_factor)
-                orig_y = int(canvas_y / self.zoom_factor)
-            else:
-                # If no event, center on the canvas view's center (approx)
-                canvas_width = self.image_canvas.winfo_width()
-                canvas_height = self.image_canvas.winfo_height()
-                scroll_x = self.image_canvas.canvasx(0) # Get current view top-left
-                scroll_y = self.image_canvas.canvasy(0)
-                center_canvas_x = scroll_x + canvas_width / 2
-                center_canvas_y = scroll_y + canvas_height / 2
-                orig_x = int(center_canvas_x / self.zoom_factor)
-                orig_y = int(center_canvas_y / self.zoom_factor)
-
-            # Calculate the region in the original image to crop
-            crop_width_orig = self.ZOOM_BOX_SIZE / self.ZOOM_BOX_FACTOR
-            crop_height_orig = self.ZOOM_BOX_SIZE / self.ZOOM_BOX_FACTOR
-
-            left = int(orig_x - crop_width_orig / 2)
-            top = int(orig_y - crop_height_orig / 2)
-            right = int(left + crop_width_orig)
-            bottom = int(top + crop_height_orig)
-
-            # Clamp coordinates to image boundaries
-            left = max(0, left)
-            top = max(0, top)
-            right = min(self.img_original.width, right)
-            bottom = min(self.img_original.height, bottom)
-
-            # Ensure valid crop dimensions
-            if right <= left or bottom <= top:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Invalid Area", fill="red")
-                return
-
-            # Use filtered image if available, else original
-            img_source = self.img_filtered if self.img_filtered is not None else self.img_original
-
-            # Crop the calculated region
-            cropped_image = img_source.crop((left, top, right, bottom))
-
-            # Resize the cropped region to fit the zoom box
-            zoomed = cropped_image.resize((self.ZOOM_BOX_SIZE, self.ZOOM_BOX_SIZE), Image.Resampling.NEAREST) # Use NEAREST for sharp pixels
-            # Check Tkinter is ready before creating PhotoImage
-            if self.root and self.root.winfo_exists():
-                 self.zoom_box_photo = ImageTk.PhotoImage(zoomed) # Store reference
-            else:
-                # print("Debug: Root window not ready for zoom_box_photo creation.")
-                return # Cannot proceed
-
-            # Display the zoomed image in the zoom box
-            self.zoom_box.delete("all")
-            self.zoom_box.create_image(0, 0, anchor=tk.NW, image=self.zoom_box_photo)
-
-            # --- Draw Overlays in Zoom Box ---
-            dot_radius_zoom = 2
-            line_width_zoom = 1
-
-            def scale_to_zoom(pt_orig):
-                if left <= pt_orig[0] < right and top <= pt_orig[1] < bottom:
-                    zoom_x = (pt_orig[0] - left) * self.ZOOM_BOX_FACTOR
-                    zoom_y = (pt_orig[1] - top) * self.ZOOM_BOX_FACTOR
-                    return zoom_x, zoom_y
-                return None
-
-            # Calibration dots
-            for dot in self.calibration_dots:
-                sp = scale_to_zoom(dot)
-                if sp: self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="cyan", outline="black")
-
-            # Artery dots and lines
-            for i in range(0, len(self.artery_dots)):
-                sp = scale_to_zoom(self.artery_dots[i])
-                if sp:
-                    self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="yellow", outline="black")
-                    if i % 2 == 1:
-                        sp_prev = scale_to_zoom(self.artery_dots[i-1])
-                        if sp_prev: self.zoom_box.create_line(sp_prev[0], sp_prev[1], sp[0], sp[1], fill="yellow", width=line_width_zoom)
-
-            # Line mode points and lines
-            for i in range(0, len(self.line_points)):
-                sp = scale_to_zoom(self.line_points[i])
-                if sp:
-                    self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="magenta", outline="black")
-                    if i % 2 == 1:
-                        sp_prev = scale_to_zoom(self.line_points[i-1])
-                        if sp_prev: self.zoom_box.create_line(sp_prev[0], sp_prev[1], sp[0], sp[1], fill="magenta", width=line_width_zoom)
-
-            # Angle points and lines
-            if self.angle_points:
-                # Draw dots
-                for p_orig in self.angle_points:
-                    sp = scale_to_zoom(p_orig)
-                    if sp:
-                        self.zoom_box.create_oval(sp[0]-dot_radius_zoom, sp[1]-dot_radius_zoom, sp[0]+dot_radius_zoom, sp[1]+dot_radius_zoom, fill="lime green", outline="black")
-                # Draw connecting lines
-                if len(self.angle_points) > 1:
-                    scaled_points_in_zoom = [scale_to_zoom(p) for p in self.angle_points]
-                    visible_points = [p for p in scaled_points_in_zoom if p is not None]
-                    if len(visible_points) > 1:
-                        self.zoom_box.create_line(visible_points, fill="lime green", width=line_width_zoom, dash=(3,1))
-
-            # Draw crosshair at the center
-            center = self.ZOOM_BOX_SIZE / 2
-            offset = 5
-            lw = 1
-            self.zoom_box.create_oval(center-offset, center-offset, center+offset, center+offset, outline="red", width=lw)
-            self.zoom_box.create_line(center, center-offset*0.6, center, center+offset*0.6, fill="red", width=lw)
-            self.zoom_box.create_line(center-offset*0.6, center, center+offset*0.6, center, fill="red", width=lw)
-
-        except tk.TclError as e:
-            # print(f"Tkinter Error during zoom box update: {e}")
-            try:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Tk Err", fill="red")
-            except tk.TclError: pass # Ignore if zoom_box itself is destroyed
+                 self.zoom_box.delete("all")
+                 self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Tk Err", fill="red")
+             except tk.TclError: pass # Ignore if zoom_box itself is destroyed
         except ValueError as e:
-            # print(f"ValueError during zoom box update: {e}")
-            try:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Size Err", fill="red")
-            except tk.TclError: pass
+             # print(f"ValueError during zoom box update: {e}")
+             try:
+                 self.zoom_box.delete("all")
+                 self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Size Err", fill="red")
+             except tk.TclError: pass
         except Exception as e:
-            print(f"Error updating zoom box content: {e}")
-            print(traceback.format_exc())
-            try:
-                self.zoom_box.delete("all")
-                self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Error", fill="red")
-            except tk.TclError: pass
+             print(f"Error updating zoom box content: {e}")
+             print(traceback.format_exc())
+             try:
+                 self.zoom_box.delete("all")
+                 self.zoom_box.create_text(self.ZOOM_BOX_SIZE / 2, self.ZOOM_BOX_SIZE / 2, text="Error", fill="red")
+             except tk.TclError: pass
 
 
     def zoom(self, factor, event=None):
